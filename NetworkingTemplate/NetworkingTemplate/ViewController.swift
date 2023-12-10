@@ -22,6 +22,21 @@ class ViewController: UIViewController {
         print(request?.httpBody, request?.httpMethod)
     }
     
+    // 구조체2 ver
+    // 구조체로 사용할거면 아래처럼 사용하는게 더 깔끔하지 싶다
+    // 기존의 구조체 방식은 체이닝을 이루어서 해보고자 했는데
+    // 막상 아래처럼 작성해도 가독성이 썩 나쁘진 않아서 괜찮은듯함
+    func getURLRequestStructVer2() {
+        var builder = URLRequestBuilder2(url: "https://api.example.com")
+        builder.setMethod(.get)
+        builder.setBody(Data())
+        builder.addHeader(field: "hihi", value: "byebye")
+        let request = builder.build()
+        
+        print(request?.url, request?.allHTTPHeaderFields)
+        print(request?.httpBody, request?.httpMethod)
+    }
+    
     // 클래스버전은 순서에 상관없이 호출이 가능하며
     // 클래스 내부 코드도 깔끔하게 작성되는 모습을 볼 수 있다.
     func getURLRequestClassVer() -> URLRequest? {
@@ -102,6 +117,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         getURLRequestStructVer()
         let request = getURLRequestClassVer()
+        getURLRequestStructVer2()
         intercept()
         intercept(with: request)
     }

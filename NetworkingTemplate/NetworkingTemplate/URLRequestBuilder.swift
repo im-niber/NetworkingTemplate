@@ -44,6 +44,46 @@ struct URLRequestBuilder {
     }
 }
 
+// 구조체 ver2
+struct URLRequestBuilder2 {
+    private var url: URL?
+    private var method: HTTPMethod = .get
+    private var headers: [String: String] = [:]
+    private var body: Data?
+
+    enum HTTPMethod: String {
+        case get = "GET"
+        case post = "POST"
+        case put = "PUT"
+        case delete = "DELETE"
+    }
+   
+    init(url: String) {
+        self.url = URL(string: url)
+    }
+
+    mutating func setMethod(_ method: HTTPMethod) {
+        self.method = method
+    }
+
+    mutating func addHeader(field: String, value: String) {
+        self.headers[field] = value
+    }
+
+    mutating func setBody(_ body: Data) {
+        self.body = body
+    }
+
+    func build() -> URLRequest? {
+        guard let url = url else { return nil }
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        request.allHTTPHeaderFields = headers
+        request.httpBody = body
+        return request
+    }
+}
+
 // 클래스 ver
 class URLRequestBuilderClass {
     private var url: URL?
