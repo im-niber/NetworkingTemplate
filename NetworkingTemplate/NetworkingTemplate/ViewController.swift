@@ -1,6 +1,9 @@
 import UIKit
+import Combine
 
 class ViewController: UIViewController {
+    
+    var cancellable = Set<AnyCancellable>()
     
     // 구조체 버전을 호출하면 addHeader를 무조건 먼저 작성해줘야한다는 단점이 있다
     // 만약 setMethod 를 먼저 호출하여 반환받으면 상수라서
@@ -14,14 +17,14 @@ class ViewController: UIViewController {
             .setMethod(.get)
             .setBody(Data())
             .build()
-
+        
         print(request?.url, request?.allHTTPHeaderFields)
         print(request?.httpBody, request?.httpMethod)
     }
     
     // 클래스버전은 순서에 상관없이 호출이 가능하며
     // 클래스 내부 코드도 깔끔하게 작성되는 모습을 볼 수 있다.
-    func getURLRequestClassVer() {
+    func getURLRequestClassVer() -> URLRequest? {
         let builder = URLRequestBuilderClass(url: "https://api.example.com")
         let request = builder
             .setMethod(.get)
@@ -31,11 +34,75 @@ class ViewController: UIViewController {
         
         print(request?.url ,request?.allHTTPHeaderFields)
         print(request?.httpBody, request?.httpMethod)
+        
+        return request
+    }
+    
+    // 네트워크 요청에 헤더를 추가하여 새로운 요청을 반환하는 코드
+    func intercept() {
+        var builder = URLRequestBuilderClass(url: "https://api.example.com/data")
+        let authInterceptor = AuthRequestInterceptor(token: "your_token")
+        
+        if let request = builder
+            .setMethod(.get)
+            .build() {
+            let interceptedRequest = authInterceptor.intercept(request)
+            
+            print("intercept", interceptedRequest)
+            print("intercept", interceptedRequest.allHTTPHeaderFields)
+        }
+    }
+    
+    // 기존 URLRequest를 받는 경우
+    func intercept(with request: URLRequest?) {
+        guard let request else { return }
+        let authInterceptor = AuthRequestInterceptor(token: "your_token")
+        let interceptedRequest = authInterceptor.intercept(request)
+        
+        print("intercept", interceptedRequest)
+        print("intercept", interceptedRequest.allHTTPHeaderFields)
+    }
+
+    // 만료일을 기준을 토큰을 담는다면 아래 처럼 사용도 가능할듯합니다.
+    func intercept(with request: URLRequest, date: Date) -> URLRequest {
+        guard date.timeIntervalSince(.now) < 0 else { return request }
+        let authInterceptor = AuthRequestInterceptor(token: "your_token")
+        
+        return authInterceptor.intercept(request)
+    }
+    
+    // 401 코드를 받는다면 새로 토큰을 담아서 요청하는 함수입니다
+    // 아래처럼 사용 가능할듯,,,함니다..!
+    func exampleNetworking(request: URLRequest) {
+        
+        URLSession.shared.dataTaskPublisher(for: request)
+            .map{ (data: Data, response: URLResponse) -> Data in
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode != 401 else {
+                    
+                    // 401 코드면 refreshToken을 담아서 새로 함수를 실행하고
+                    // 여기서는 빈 데이터를 리턴합니당
+                    self.exampleNetworking(request: AuthRequestInterceptor(token: "refreshToken").intercept(request))
+                    
+                    return Data()
+                }
+                
+                return data
+            }
+            .replaceError(with: Data())
+            .compactMap { UIImage(data:$0) }
+            .receive(on: DispatchQueue.main)
+            .sink { image in
+                // self.imageView.image = image
+                // ...
+            }.store(in: &cancellable)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         getURLRequestStructVer()
-        getURLRequestClassVer()
+        let request = getURLRequestClassVer()
+        intercept()
+        intercept(with: request)
     }
 }
