@@ -112,13 +112,28 @@ class ViewController: UIViewController {
                 // ...
             }.store(in: &cancellable)
     }
+    
+    // retry 예제
+    func exampleRetry(request: URLRequest) {
+        let requestRetrier = SimpleRequestRetrier()
+        let error = NSError(domain: "NetworkError", code: -1009)
+        let shouldRetry = requestRetrier.shouldRetry(request, with: error, attempt: 1)
+            
+        if shouldRetry {
+            if let retriedRequest = requestRetrier.retry(request, with: error, attempt: 1) {
+                print("Retrying request, \(retriedRequest)")
+            }
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        getURLRequestStructVer()
         let request = getURLRequestClassVer()
+        
+        getURLRequestStructVer()
         getURLRequestStructVer2()
         intercept()
         intercept(with: request)
+        exampleRetry(request: request!)
     }
 }
