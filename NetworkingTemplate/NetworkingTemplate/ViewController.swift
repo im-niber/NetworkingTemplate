@@ -135,5 +135,23 @@ class ViewController: UIViewController {
         intercept()
         intercept(with: request)
         exampleRetry(request: request!)
+        exampleNetworkServiceFetch()
+    }
+    
+    // service 예제 함수
+    func exampleNetworkServiceFetch() {
+        let builder = URLRequestBuilderClass(url: "https://api.example.com")
+        let request = builder
+            .setMethod(.get)
+            .setBody(Data())
+            .addHeader(field: "hi", value: "bye")
+            .build()
+        
+        guard let request = request else { return }
+        
+        let networkService = NetworkService(interceptor: nil, retrier: nil)
+        networkService.request(request: request, type: String.self) { data in
+            print(data)
+        }
     }
 }
